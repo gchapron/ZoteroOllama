@@ -31,8 +31,8 @@ async function startup({ id, version, rootURI }) {
 	Zotero.PreferencePanes.register({
 		pluginID: id,
 		src: rootURI + "content/preferences.xhtml",
+		scripts: [rootURI + "content/preferences.js"],
 		label: "ZoteroOllama",
-		image: rootURI + "icons/icon.png",
 	});
 }
 

@@ -113,7 +113,7 @@ Go to **Zotero > Settings** (macOS) or **Edit > Settings** (Windows/Linux), then
 | Setting | Default | Description |
 |---------|---------|-------------|
 | **Ollama URL** | `http://localhost:11434` | Address of your Ollama server. Change if Ollama runs on a different host or port |
-| **Model** | `gpt-oss:20b` | The Ollama model to use. Must be already pulled (`ollama pull <model>`) |
+| **Model** | `gpt-oss:20b` | The Ollama model to use, selected from a dropdown of installed models. Must be already pulled (`ollama pull <model>`) |
 | **Context Window Size** | `32768` | Minimum token context window. Automatically expanded if the PDF requires more |
 | **System Prompt** | *(research assistant)* | Instructions sent to the model with every request. Customize to change the assistant's behavior |
 | **Max PDF Text Length** | `100000` | Maximum characters of PDF text to extract from Zotero's index |
@@ -130,7 +130,7 @@ The model you choose affects both quality and speed. Some recommendations:
 | `qwen2.5` | 7B | 128k | Strong multilingual support |
 | `gemma3` | 12B | 128k | High quality, needs more RAM |
 
-Pull a model with `ollama pull <model>` before using it. You can list available models with `ollama list`.
+Pull a model with `ollama pull <model>` before using it. The **Model** dropdown in ZoteroOllama settings automatically lists all models installed in Ollama, so you can pick one directly. You can also list available models from the command line with `ollama list`.
 
 ## How it works
 
@@ -159,7 +159,8 @@ ZoteroOllama/
 │   │                          #   rendering, context analysis, note saving
 │   └── chat-dialog.css        # Chat window styles
 ├── content/
-│   └── preferences.xhtml      # Preferences pane
+│   ├── preferences.xhtml      # Preferences pane
+│   └── preferences.js         # Preferences controller (model dropdown)
 ├── locale/en-US/
 │   └── zotero-ollama.ftl      # Localization strings
 └── build.sh                   # Packages files into .xpi

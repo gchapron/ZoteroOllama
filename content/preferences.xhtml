@@ -1,5 +1,6 @@
 <vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-      xmlns:html="http://www.w3.org/1999/xhtml">
+      xmlns:html="http://www.w3.org/1999/xhtml"
+      onload="ZoteroOllamaPrefs.init()">
 
   <groupbox>
     <label><html:h2>Ollama Server</html:h2></label>
@@ -7,6 +8,7 @@
     <hbox align="center">
       <label value="Ollama URL:" style="width: 160px;" />
       <html:input
+        id="pref-ollama-url"
         type="text"
         preference="extensions.zotero-ollama.ollamaUrl"
         style="flex: 1;"
@@ -14,13 +16,15 @@
     </hbox>
 
     <hbox align="center" style="margin-top: 8px;">
-      <label value="Model:" style="width: 160px;" />
-      <html:input
-        type="text"
-        preference="extensions.zotero-ollama.model"
-        style="flex: 1;"
-      />
+      <label value="Model:" style="width: 160px;" control="pref-model-menu" />
+      <menulist id="pref-model-menu"
+                preference="extensions.zotero-ollama.model"
+                native="true"
+                style="flex: 1;">
+        <menupopup />
+      </menulist>
     </hbox>
+    <html:p id="pref-model-status" style="margin: 4px 0 0 164px; color: #888; font-size: 11px;"></html:p>
 
     <hbox align="center" style="margin-top: 8px;">
       <label value="Context Window Size:" style="width: 160px;" />
