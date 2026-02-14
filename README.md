@@ -8,12 +8,16 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 
 - **Chat with any PDF** in your Zotero library using a local LLM
 - **Streaming responses** — answers appear token-by-token as the model generates them
+- **Rendered Markdown** — responses display formatted headings, bold, italic, code blocks, tables, lists, blockquotes, and links
 - **Multi-turn conversation** — ask follow-up questions with full context preserved
+- **Dynamic context window** — automatically expands Ollama's `num_ctx` to fit larger PDFs, with clear warnings when documents are very large
+- **Save to Zotero notes** — click the note icon on any answer to save it as a child note ("Ollama notes") under the reference item
+- **Copy text** — select and copy any part of an answer with Cmd/Ctrl+C
 - **Automatic PDF text extraction** using Zotero's built-in full-text index
 - **Paper metadata included** — title, authors, year, and DOI are sent alongside the text for richer answers
 - **Configurable** — choose your model, adjust the context window, customize the system prompt
 - **Privacy-first** — all processing happens locally via Ollama, nothing is sent to external servers
-- **Keyboard shortcut and context menu** — quick access however you prefer
+- **Keyboard shortcuts** — Cmd/Ctrl+Shift+G to open, Cmd/Ctrl+W to close
 
 ## Requirements
 
@@ -51,6 +55,27 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 4. Type your question in the input area and press **Enter**
 5. The response streams in real-time from your local Ollama model
 
+### Keyboard shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| **Cmd/Ctrl+Shift+G** | Open chat window for selected item |
+| **Enter** | Send message |
+| **Shift+Enter** | Insert newline without sending |
+| **Cmd/Ctrl+C** | Copy selected text from answers |
+| **Cmd/Ctrl+W** | Close chat window |
+
+### Saving answers to Zotero notes
+
+Each assistant answer has a small note icon (📝) in the bottom-right corner. Click it to save the answer to a Zotero note:
+
+- The note is created as a child of the reference item (alongside the PDF), titled **"Ollama notes"**
+- If the note already exists, new answers are appended with a timestamp separator
+- If it doesn't exist, a new note is created automatically
+- A brief checkmark (✅) confirms the save
+
+This makes it easy to build up a collection of useful excerpts and analyses directly within your Zotero library.
+
 ### Example questions
 
 - "Summarize this paper in 3 bullet points"
@@ -58,15 +83,28 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 - "What are the main findings and their implications?"
 - "Are there any limitations mentioned in the study?"
 - "Explain the statistical analysis used in section 3"
+- "Compare the results in Table 2 with the claims in the discussion"
 - "How does this paper relate to [topic]?"
 
 ### Tips
 
-- Press **Shift+Enter** to insert a new line without sending
 - Click **Stop** to cancel a running generation mid-stream
 - Click **Clear** to reset the conversation history (the PDF context remains loaded)
 - The PDF must be indexed by Zotero for text extraction to work. If it fails, right-click the item in Zotero and select **Reindex Item**
-- For large PDFs that exceed the max text length, the text is truncated with a warning — you can increase the limit in settings
+
+## Context window management
+
+ZoteroOllama intelligently manages Ollama's context window (`num_ctx`) so that as much of the PDF as possible is available to the model:
+
+1. **PDF fits in configured context** — no change, uses your configured context window size (default: 32,768 tokens)
+2. **PDF needs more room** — the context window is automatically expanded up to 131K tokens, with a notification:
+   - Up to 65K: quiet info message
+   - Above 65K: warning that answers may be slower
+3. **PDF exceeds 131K tokens** — the text is truncated to fit, with a warning showing what percentage of the document was kept
+
+The chat window header always shows the effective context size (marked `(auto)` if expanded) and the estimated PDF size in tokens.
+
+> **Note:** Larger context windows use more VRAM/RAM and increase response time. If answers are too slow, consider using a smaller model or reducing the context window in settings. Ollama's default `num_ctx` is only 2048–4096 tokens — ZoteroOllama overrides this per-request to accommodate academic papers.
 
 ## Configuration
 
@@ -74,33 +112,35 @@ Go to **Zotero > Settings** (macOS) or **Edit > Settings** (Windows/Linux), then
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| **Ollama URL** | `http://localhost:11434` | Address of your Ollama server. Change this if Ollama runs on a different host or port |
+| **Ollama URL** | `http://localhost:11434` | Address of your Ollama server. Change if Ollama runs on a different host or port |
 | **Model** | `gpt-oss:20b` | The Ollama model to use. Must be already pulled (`ollama pull <model>`) |
-| **Context Window Size** | `32768` | Token context window (`num_ctx`) sent to Ollama. Increase for longer papers, decrease if you run out of memory |
+| **Context Window Size** | `32768` | Minimum token context window. Automatically expanded if the PDF requires more |
 | **System Prompt** | *(research assistant)* | Instructions sent to the model with every request. Customize to change the assistant's behavior |
-| **Max PDF Text Length** | `100000` | Maximum characters of PDF text to include. Longer documents are truncated from the end with a warning |
+| **Max PDF Text Length** | `100000` | Maximum characters of PDF text to extract from Zotero's index |
 
 ### Choosing a model
 
 The model you choose affects both quality and speed. Some recommendations:
 
-| Model | Size | Context | Notes |
-|-------|------|---------|-------|
+| Model | Size | Max Context | Notes |
+|-------|------|-------------|-------|
 | `llama3.2` | 3B | 128k | Fast, good for most documents |
 | `llama3.1` | 8B | 128k | Better quality, slower |
 | `mistral` | 7B | 32k | Good general-purpose alternative |
 | `qwen2.5` | 7B | 128k | Strong multilingual support |
+| `gemma3` | 12B | 128k | High quality, needs more RAM |
 
-Pull a model with `ollama pull <model>` before using it.
+Pull a model with `ollama pull <model>` before using it. You can list available models with `ollama list`.
 
 ## How it works
 
 1. When triggered, the plugin finds the first PDF attachment of the selected Zotero item
 2. It reads the full text from Zotero's built-in full-text index (`attachment.attachmentText`). If the PDF isn't indexed yet, it attempts to trigger indexing automatically
-3. The extracted text, along with paper metadata (title, authors, year, DOI), is packaged into a system message
-4. Your question is sent to the Ollama `/api/chat` endpoint as a user message, with the full PDF context and conversation history
-5. The response is streamed back token-by-token via Ollama's NDJSON streaming format and displayed in real time
-6. For follow-up questions, the complete conversation history is sent each time, maintaining context across the entire chat session
+3. The chat dialog estimates the token count and adjusts the context window to fit the entire document when possible
+4. The extracted text, along with paper metadata (title, authors, year, DOI), is packaged into a system message
+5. Your question is sent to the Ollama `/api/chat` endpoint as a user message, with the full PDF context and conversation history
+6. The response is streamed back token-by-token via Ollama's NDJSON streaming format, rendered as Markdown in real time
+7. For follow-up questions, the complete conversation history is sent each time, maintaining context across the entire chat session
 
 ## Architecture
 
@@ -115,15 +155,13 @@ ZoteroOllama/
 ├── ollama.js                  # Ollama HTTP client with streaming support
 ├── chrome/content/
 │   ├── chat-dialog.xhtml      # Chat window structure
-│   ├── chat-dialog.js         # Chat window controller (conversation state, streaming UI)
+│   ├── chat-dialog.js         # Chat controller: conversation, streaming, Markdown
+│   │                          #   rendering, context analysis, note saving
 │   └── chat-dialog.css        # Chat window styles
 ├── content/
 │   └── preferences.xhtml      # Preferences pane
 ├── locale/en-US/
 │   └── zotero-ollama.ftl      # Localization strings
-├── icons/
-│   ├── icon.png               # Plugin icon (48x48)
-│   └── icon.svg               # Plugin icon (vector)
 └── build.sh                   # Packages files into .xpi
 ```
 
@@ -138,15 +176,26 @@ This creates a `zotero-ollama-<version>.xpi` file ready for installation.
 
 ## Troubleshooting
 
-**"Cannot connect to Ollama"** — Make sure Ollama is running. Start it with `ollama serve` or launch the Ollama application.
+**"Cannot connect to Ollama"**
+Make sure Ollama is running. Start it with `ollama serve` or launch the Ollama application.
 
-**"No PDF attachment found"** — The selected item must have a PDF file attached (not just a link). Check that the PDF is visible in the item's attachment list.
+**"No PDF attachment found"**
+The selected item must have a PDF file attached (not just a link). Check that the PDF is visible in the item's attachment list.
 
-**"Could not extract text from PDF"** — The PDF may not be indexed yet. Right-click the item in Zotero and select **Reindex Item**. Image-only PDFs without OCR cannot be extracted.
+**"Could not extract text from PDF"**
+The PDF may not be indexed yet. Right-click the item in Zotero and select **Reindex Item**. Image-only PDFs without OCR text cannot be extracted.
 
-**Chat window doesn't open** — Verify the plugin is enabled in **Tools > Add-ons**. Try restarting Zotero with `-purgecaches` to clear script caches.
+**Chat window doesn't open**
+Verify the plugin is enabled in **Tools > Add-ons**. Try restarting Zotero with `-purgecaches` to clear script caches.
 
-**Responses are slow or cut off** — Try reducing the Context Window Size in settings, or switch to a smaller model. Large context windows require more VRAM.
+**Responses are slow**
+Large context windows require more VRAM and increase inference time. Try reducing the context window size in settings, or switch to a smaller model. Check the chat header to see the effective context size — if it shows `(auto)`, the window was expanded to fit a large PDF.
+
+**"PDF text too large for the maximum context window"**
+The PDF exceeds 131K tokens (~460K characters). The text is automatically truncated to fit. Answers about content near the end of the document may be unreliable. Consider using a model with a larger native context window.
+
+**Copy doesn't work**
+Make sure you're using **Cmd+C** (macOS) or **Ctrl+C** (Windows/Linux) after selecting text in the chat window. The plugin handles clipboard operations explicitly for the chrome-privileged dialog.
 
 ## License
 
