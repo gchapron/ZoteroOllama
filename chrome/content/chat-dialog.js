@@ -315,6 +315,30 @@ var ChatDialog = {
 				continue;
 			}
 
+			// Table: detect a row starting with | or a line with | separators
+			// and a separator line like |---|---| on the next line
+			if (this._isTableRow(line)) {
+				if (inList) {
+					result.push(listType === "ul" ? "</ul>" : "</ol>");
+					inList = false;
+				}
+				if (inBlockquote) {
+					result.push("</blockquote>");
+					inBlockquote = false;
+				}
+				// Collect all consecutive table rows
+				let tableLines = [line];
+				while (
+					i + 1 < lines.length &&
+					this._isTableRow(lines[i + 1])
+				) {
+					i++;
+					tableLines.push(lines[i]);
+				}
+				result.push(this._renderTable(tableLines));
+				continue;
+			}
+
 			// Unordered list items
 			let ulMatch = line.match(/^[\s]*[-*+]\s+(.+)$/);
 			if (ulMatch) {
@@ -424,6 +448,88 @@ var ChatDialog = {
 		);
 
 		return text;
+	},
+
+	/**
+	 * Check if a line looks like a markdown table row (contains |).
+	 */
+	_isTableRow(line) {
+		let trimmed = line.trim();
+		// Must contain at least one | that's not inside backticks
+		// and have content on at least one side
+		return /\|/.test(trimmed) && /\S/.test(trimmed.replace(/\|/g, ""));
+	},
+
+	/**
+	 * Check if a line is a table separator (e.g. |---|---|).
+	 */
+	_isTableSeparator(line) {
+		let trimmed = line.trim().replace(/^\||\|$/g, "");
+		return /^[\s|:-]+$/.test(trimmed) && /---/.test(trimmed);
+	},
+
+	/**
+	 * Parse table row cells from a line like "| a | b | c |".
+	 */
+	_parseTableCells(line) {
+		let trimmed = line.trim();
+		// Remove leading/trailing pipes
+		if (trimmed.startsWith("|")) trimmed = trimmed.substring(1);
+		if (trimmed.endsWith("|")) trimmed = trimmed.substring(0, trimmed.length - 1);
+		return trimmed.split("|").map((cell) => cell.trim());
+	},
+
+	/**
+	 * Render a group of table lines into an HTML table.
+	 */
+	_renderTable(tableLines) {
+		if (tableLines.length === 0) return "";
+
+		// Determine if second line is a separator (header row present)
+		let hasHeader =
+			tableLines.length >= 2 &&
+			this._isTableSeparator(tableLines[1]);
+
+		let html = '<table class="md-table">';
+
+		if (hasHeader) {
+			// First line is header
+			let headerCells = this._parseTableCells(tableLines[0]);
+			html += "<thead><tr>";
+			for (let cell of headerCells) {
+				html += "<th>" + this._renderInline(cell) + "</th>";
+			}
+			html += "</tr></thead>";
+
+			// Remaining lines (skip separator at index 1)
+			html += "<tbody>";
+			for (let j = 2; j < tableLines.length; j++) {
+				if (this._isTableSeparator(tableLines[j])) continue;
+				let cells = this._parseTableCells(tableLines[j]);
+				html += "<tr>";
+				for (let cell of cells) {
+					html += "<td>" + this._renderInline(cell) + "</td>";
+				}
+				html += "</tr>";
+			}
+			html += "</tbody>";
+		} else {
+			// No header — all rows are body
+			html += "<tbody>";
+			for (let j = 0; j < tableLines.length; j++) {
+				if (this._isTableSeparator(tableLines[j])) continue;
+				let cells = this._parseTableCells(tableLines[j]);
+				html += "<tr>";
+				for (let cell of cells) {
+					html += "<td>" + this._renderInline(cell) + "</td>";
+				}
+				html += "</tr>";
+			}
+			html += "</tbody>";
+		}
+
+		html += "</table>";
+		return html;
 	},
 
 	// ── UI helpers ────────────────────────────────────────────────────
