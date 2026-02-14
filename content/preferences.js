@@ -1,8 +1,11 @@
-/* global Zotero, document */
-/* exported ZoteroOllamaPrefs */
+/* global Zotero, document, window */
 
-// eslint-disable-next-line no-redeclare, no-unused-vars
-var ZoteroOllamaPrefs = {
+// Assign to window explicitly so that the onload="ZoteroOllamaPrefs.init()"
+// attribute in the XHTML can resolve the name. In Zotero 8, preference pane
+// scripts run in their own Cu.Sandbox scope, so a plain `var` declaration
+// is not visible to inline event handlers (which resolve against `window`).
+// This is backward-compatible with Zotero 7.
+window.ZoteroOllamaPrefs = {
 	DEFAULT_MODEL: "gpt-oss:20b",
 
 	/**
