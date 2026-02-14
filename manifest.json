@@ -4,9 +4,7 @@
   "version": "0.1.0",
   "description": "Chat with your PDFs using Ollama local LLMs",
   "author": "Guillaume",
-  "icons": {
-    "48": "icons/icon.png"
-  },
+  "icons": {},
   "applications": {
     "zotero": {
       "id": "zotero-ollama@example.com",

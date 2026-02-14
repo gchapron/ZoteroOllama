@@ -66,6 +66,16 @@ var ChatDialog = {
 			}
 		});
 
+		// Enable Cmd/Ctrl+W to close the chat window
+		document.addEventListener("keydown", (event) => {
+			let modKey = event.metaKey || event.ctrlKey;
+			if (modKey && event.key === "w") {
+				event.preventDefault();
+				window.close();
+				return;
+			}
+		});
+
 		// Enable Cmd/Ctrl+C copy in the chat window
 		document.addEventListener("keydown", (event) => {
 			let modKey = event.metaKey || event.ctrlKey;
