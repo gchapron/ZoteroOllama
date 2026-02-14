@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://zotero-ollama/content/chat-dialog.css" type="text/css"?>
+
+<window
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  id="zotero-ollama-chat-window"
+  title="ZoteroOllama Chat"
+  width="700"
+  height="600"
+  persist="width height screenX screenY"
+  onload="ChatDialog.init();"
+>
+  <html:div id="chat-container">
+    <!-- Header -->
+    <html:div id="chat-header">
+      <html:div id="chat-title"></html:div>
+      <html:div id="chat-model-info"></html:div>
+    </html:div>
+
+    <!-- Status bar (warnings, errors) -->
+    <html:div id="chat-status-bar" class="hidden"></html:div>
+
+    <!-- Scrollable message history -->
+    <html:div id="chat-messages"></html:div>
+
+    <!-- Input area -->
+    <html:div id="chat-input-area">
+      <html:textarea
+        id="chat-input"
+        placeholder="Ask a question about this paper... (Enter to send, Shift+Enter for newline)"
+        rows="3"
+      ></html:textarea>
+      <html:div id="chat-buttons">
+        <html:button id="chat-send-btn" class="chat-btn primary">Send</html:button>
+        <html:button id="chat-stop-btn" class="chat-btn" disabled="true">Stop</html:button>
+        <html:button id="chat-clear-btn" class="chat-btn">Clear</html:button>
+      </html:div>
+    </html:div>
+  </html:div>
+
+  <script src="chrome://zotero-ollama/content/chat-dialog.js" />
+</window>

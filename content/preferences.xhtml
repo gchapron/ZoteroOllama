@@ -1,0 +1,71 @@
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      xmlns:html="http://www.w3.org/1999/xhtml">
+
+  <groupbox>
+    <label><html:h2>Ollama Server</html:h2></label>
+
+    <hbox align="center">
+      <label value="Ollama URL:" style="width: 160px;" />
+      <html:input
+        type="text"
+        preference="extensions.zotero-ollama.ollamaUrl"
+        style="flex: 1;"
+      />
+    </hbox>
+
+    <hbox align="center" style="margin-top: 8px;">
+      <label value="Model:" style="width: 160px;" />
+      <html:input
+        type="text"
+        preference="extensions.zotero-ollama.model"
+        style="flex: 1;"
+      />
+    </hbox>
+
+    <hbox align="center" style="margin-top: 8px;">
+      <label value="Context Window Size:" style="width: 160px;" />
+      <html:input
+        type="number"
+        preference="extensions.zotero-ollama.contextWindowSize"
+        min="2048"
+        max="131072"
+        step="1024"
+        style="width: 120px;"
+      />
+    </hbox>
+  </groupbox>
+
+  <groupbox>
+    <label><html:h2>Chat Settings</html:h2></label>
+
+    <vbox>
+      <label value="System Prompt:" />
+      <html:textarea
+        preference="extensions.zotero-ollama.systemPrompt"
+        rows="4"
+        style="width: 100%; margin-top: 4px; font-family: inherit; font-size: 13px;"
+      ></html:textarea>
+    </vbox>
+
+    <hbox align="center" style="margin-top: 8px;">
+      <label value="Max PDF Text Length:" style="width: 160px;" />
+      <html:input
+        type="number"
+        preference="extensions.zotero-ollama.maxPdfTextLength"
+        min="10000"
+        max="500000"
+        step="10000"
+        style="width: 120px;"
+      />
+    </hbox>
+  </groupbox>
+
+  <groupbox>
+    <label><html:h2>Keyboard Shortcut</html:h2></label>
+    <html:p style="margin: 4px 0; color: #666; font-size: 12px;">
+      Press <html:strong>Ctrl+Shift+G</html:strong> (Cmd+Shift+G on macOS) to open the chat window for the selected item.
+      You can also right-click an item and select "Chat with PDF (Ollama)".
+    </html:p>
+  </groupbox>
+
+</vbox>

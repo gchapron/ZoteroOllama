@@ -1,0 +1,17 @@
+zotero-ollama-menu-label = Chat with PDF (Ollama)
+zotero-ollama-chat-title = ZoteroOllama Chat
+zotero-ollama-send = Send
+zotero-ollama-stop = Stop
+zotero-ollama-clear = Clear Chat
+zotero-ollama-input-placeholder = Ask a question about this paper...
+zotero-ollama-status-truncated = PDF text was truncated. Some content at the end may be missing.
+zotero-ollama-status-no-connection = Cannot connect to Ollama. Make sure Ollama is running.
+zotero-ollama-error-no-selection = Please select exactly one item to chat about.
+zotero-ollama-error-not-regular = Please select a regular item (not an attachment or note).
+zotero-ollama-error-no-pdf = No PDF attachment found for this item.
+zotero-ollama-error-no-text = Could not extract text from PDF. Try rebuilding the index.
+zotero-ollama-pref-ollama-url = Ollama URL
+zotero-ollama-pref-model = Model
+zotero-ollama-pref-context-size = Context Window Size
+zotero-ollama-pref-system-prompt = System Prompt
+zotero-ollama-pref-max-text-length = Max PDF Text Length

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Chat bubble -->
+  <path d="M8 6h32a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H18l-8 8v-8H8a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z" fill="#4A90D9" stroke="#3A7BC8" stroke-width="1"/>
+  <!-- Document icon inside bubble -->
+  <rect x="17" y="12" width="14" height="18" rx="1.5" fill="white" opacity="0.9"/>
+  <line x1="20" y1="17" x2="28" y2="17" stroke="#4A90D9" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="20" y1="21" x2="28" y2="21" stroke="#4A90D9" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="20" y1="25" x2="25" y2="25" stroke="#4A90D9" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
