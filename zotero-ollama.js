@@ -185,18 +185,6 @@ var ZoteroOllama = {
 			return;
 		}
 
-		// Apply max length limit
-		let maxLen =
-			Zotero.Prefs.get(
-				"extensions.zotero-ollama.maxPdfTextLength",
-				true
-			) || 100000;
-		let truncated = false;
-		if (pdfText.length > maxLen) {
-			pdfText = pdfText.substring(0, maxLen);
-			truncated = true;
-		}
-
 		// Build item metadata string
 		let title = item.getField("title") || "Untitled";
 		let creators = item
@@ -214,7 +202,6 @@ var ZoteroOllama = {
 		// Prepare data for the dialog
 		let dialogData = {
 			pdfText: pdfText,
-			truncated: truncated,
 			metadata: metadata,
 			itemTitle: title,
 			itemId: item.id,

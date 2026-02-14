@@ -13,8 +13,10 @@ var ChatDialog = {
 	model: "",
 	ollamaUrl: "",
 	contextWindowSize: 32768,
+	userContextWindowSize: 32768, // the original value from preferences
 	systemPrompt: "",
 	itemId: null,
+	_contextWarnings: [], // populated by _analyzeAndAdjustContext
 
 	// DOM references
 	dom: {},
@@ -31,6 +33,7 @@ var ChatDialog = {
 		this.model = data.model;
 		this.ollamaUrl = data.ollamaUrl;
 		this.contextWindowSize = data.contextWindowSize;
+		this.userContextWindowSize = data.contextWindowSize;
 		this.systemPrompt = data.systemPrompt;
 
 		// Cache DOM references
@@ -47,21 +50,6 @@ var ChatDialog = {
 		this.dom.title.textContent = data.itemTitle || "Chat";
 		window.document.title =
 			"ZoteroOllama - " + (data.itemTitle || "Chat");
-		this.dom.modelInfo.textContent =
-			"Model: " +
-			this.model +
-			"  |  Context: " +
-			this.contextWindowSize;
-
-		// Show truncation warning
-		if (data.truncated) {
-			this.showStatus(
-				"PDF text was truncated to " +
-					data.pdfText.length.toLocaleString() +
-					" characters. Some content at the end may be missing.",
-				"warning"
-			);
-		}
 
 		// Wire up event handlers
 		this.dom.sendBtn.addEventListener("click", () => this.sendMessage());
@@ -107,12 +95,13 @@ var ChatDialog = {
 			}
 		});
 
-		// Add welcome message
-		this._addSystemInfoToUI(
-			"PDF loaded (" +
-				data.pdfText.length.toLocaleString() +
-				" chars). Ask a question about this paper."
-		);
+		// Analyze context window vs PDF size, adjust/truncate if needed
+		// (this may truncate this.pdfText and updates the header)
+		this._analyzeAndAdjustContext();
+
+		// Add welcome message (after analysis, since pdfText may have been truncated)
+		// Warnings from _analyzeAndAdjustContext are queued and shown after this
+		this._addWelcomeAndWarnings();
 
 		// Focus input
 		this.dom.input.focus();
@@ -266,6 +255,132 @@ var ChatDialog = {
 
 	hideStatus() {
 		this.dom.statusBar.className = "hidden";
+	},
+
+	// ── Token estimation & context window ────────────────────────────
+
+	/**
+	 * Estimate the number of tokens in a string.
+	 * Rough heuristic: ~1 token per 4 characters for English text.
+	 * This is intentionally conservative (overestimates tokens) to avoid
+	 * silently exceeding the context window.
+	 */
+	_estimateTokens(text) {
+		if (!text) return 0;
+		return Math.ceil(text.length / 3.5);
+	},
+
+	/**
+	 * Analyze whether the PDF text fits in the context window and
+	 * dynamically adjust if needed. Called during init().
+	 *
+	 * Context budget:
+	 *   contextWindow = systemTokens + pdfTokens + conversationTokens + responseTokens
+	 *
+	 * We reserve ~2048 tokens for conversation + response headroom.
+	 */
+	_analyzeAndAdjustContext() {
+		let MAX_CONTEXT = 131072; // hard cap for context window
+		let RESPONSE_RESERVE = 2048; // tokens reserved for conversation + response
+
+		// Estimate tokens for the fixed content (system prompt + metadata)
+		let systemContent =
+			this.systemPrompt +
+			"\n\n--- PAPER METADATA ---\n" +
+			this.metadata;
+		let systemTokens = this._estimateTokens(systemContent);
+		let originalPdfLength = this.pdfText.length;
+		let pdfTokens = this._estimateTokens(this.pdfText);
+		let totalNeeded = systemTokens + pdfTokens + RESPONSE_RESERVE;
+
+		let contextAdjusted = false;
+
+		if (totalNeeded <= this.userContextWindowSize) {
+			// Everything fits in the user's configured context window
+			this.contextWindowSize = this.userContextWindowSize;
+		} else if (totalNeeded <= MAX_CONTEXT) {
+			// Expand context window to fit the full PDF
+			this.contextWindowSize = totalNeeded;
+			contextAdjusted = true;
+		} else {
+			// PDF is too large even for the max context window
+			// Truncate the PDF text to what fits within 131K
+			this.contextWindowSize = MAX_CONTEXT;
+			contextAdjusted = true;
+			let fittableTokens = MAX_CONTEXT - systemTokens - RESPONSE_RESERVE;
+			let fittableChars = Math.floor(fittableTokens * 3.5);
+			if (fittableChars < this.pdfText.length) {
+				this.pdfText = this.pdfText.substring(0, fittableChars);
+			}
+		}
+
+		// Recalculate after possible truncation
+		pdfTokens = this._estimateTokens(this.pdfText);
+		let truncated = this.pdfText.length < originalPdfLength;
+
+		// Update header with effective context size
+		let contextLabel = this.contextWindowSize.toLocaleString();
+		if (contextAdjusted) {
+			contextLabel += " (auto)";
+		}
+		this.dom.modelInfo.textContent =
+			"Model: " +
+			this.model +
+			"  |  Context: " +
+			contextLabel +
+			"  |  PDF: ~" +
+			pdfTokens.toLocaleString() +
+			" tokens";
+
+		// Queue appropriate warnings (shown later by _addWelcomeAndWarnings)
+		this._contextWarnings = [];
+		if (truncated) {
+			let pctKept = Math.round(
+				(this.pdfText.length / originalPdfLength) * 100
+			);
+			this._contextWarnings.push(
+				"\u26A0\uFE0F PDF text too large for the maximum context window (" +
+					MAX_CONTEXT.toLocaleString() +
+					" tokens). " +
+					"Text truncated to " +
+					this.pdfText.length.toLocaleString() +
+					" chars (~" +
+					pctKept +
+					"% of original). " +
+					"Answers about later sections may be unreliable."
+			);
+		} else if (this.contextWindowSize > 65536) {
+			this._contextWarnings.push(
+				"\u26A0\uFE0F Context window expanded to " +
+					this.contextWindowSize.toLocaleString() +
+					" tokens to fit the full PDF. " +
+					"Answers may be slower due to the large context."
+			);
+		} else if (contextAdjusted) {
+			this._contextWarnings.push(
+				"\u2139\uFE0F Context window adjusted from " +
+					this.userContextWindowSize.toLocaleString() +
+					" to " +
+					this.contextWindowSize.toLocaleString() +
+					" tokens to fit the full PDF text."
+			);
+		}
+	},
+
+	/**
+	 * Show the welcome message followed by any context warnings.
+	 */
+	_addWelcomeAndWarnings() {
+		this._addSystemInfoToUI(
+			"PDF loaded (" +
+				this.pdfText.length.toLocaleString() +
+				" chars, ~" +
+				this._estimateTokens(this.pdfText).toLocaleString() +
+				" tokens). Ask a question about this paper."
+		);
+		for (let w of this._contextWarnings) {
+			this._addSystemInfoToUI(w);
+		}
 	},
 
 	// ── Markdown rendering ────────────────────────────────────────────
