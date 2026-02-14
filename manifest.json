@@ -1,16 +1,16 @@
 {
   "manifest_version": 2,
   "name": "ZoteroOllama",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Chat with your PDFs using Ollama local LLMs",
-  "author": "Guillaume",
+  "author": "Guillaume Chapron",
   "icons": {},
   "applications": {
     "zotero": {
       "id": "zotero-ollama@example.com",
-      "update_url": "https://raw.githubusercontent.com/guillaume/ZoteroOllama/main/updates.json",
+      "update_url": "https://raw.githubusercontent.com/gchapron/ZoteroOllama/main/updates.json",
       "strict_min_version": "6.999",
-      "strict_max_version": "7.99.*"
+      "strict_max_version": "8.0.*"
     }
   }
 }
