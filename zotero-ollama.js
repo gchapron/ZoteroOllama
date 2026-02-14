@@ -217,6 +217,7 @@ var ZoteroOllama = {
 			truncated: truncated,
 			metadata: metadata,
 			itemTitle: title,
+			itemId: item.id,
 			rootURI: this.rootURI,
 			model:
 				Zotero.Prefs.get("extensions.zotero-ollama.model", true) ||

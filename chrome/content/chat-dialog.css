@@ -310,6 +310,38 @@
   border-color: #6c9cef;
 }
 
+/* === Note icon on assistant messages === */
+.chat-message.assistant {
+  position: relative;
+}
+
+.note-icon-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.note-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s;
+  line-height: 1;
+}
+
+.note-icon-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.note-icon-btn.saved {
+  opacity: 1;
+}
+
 /* === Scrollbar styling === */
 #chat-messages::-webkit-scrollbar {
   width: 6px;

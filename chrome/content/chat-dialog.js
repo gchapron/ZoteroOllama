@@ -14,6 +14,7 @@ var ChatDialog = {
 	ollamaUrl: "",
 	contextWindowSize: 32768,
 	systemPrompt: "",
+	itemId: null,
 
 	// DOM references
 	dom: {},
@@ -26,6 +27,7 @@ var ChatDialog = {
 		const data = window.arguments[0];
 		this.pdfText = data.pdfText;
 		this.metadata = data.metadata;
+		this.itemId = data.itemId;
 		this.model = data.model;
 		this.ollamaUrl = data.ollamaUrl;
 		this.contextWindowSize = data.contextWindowSize;
@@ -73,6 +75,35 @@ var ChatDialog = {
 			if (event.key === "Enter" && !event.shiftKey) {
 				event.preventDefault();
 				this.sendMessage();
+			}
+		});
+
+		// Enable Cmd/Ctrl+C copy in the chat window
+		document.addEventListener("keydown", (event) => {
+			let modKey = event.metaKey || event.ctrlKey;
+			if (modKey && event.key === "c") {
+				let selection = window.getSelection();
+				if (selection && selection.toString().length > 0) {
+					event.preventDefault();
+					let text = selection.toString();
+					// Use clipboard API
+					if (navigator.clipboard && navigator.clipboard.writeText) {
+						navigator.clipboard.writeText(text);
+					} else {
+						// Fallback: use a temporary textarea
+						let temp = document.createElementNS(
+							"http://www.w3.org/1999/xhtml",
+							"textarea"
+						);
+						temp.value = text;
+						temp.style.position = "fixed";
+						temp.style.left = "-9999px";
+						document.documentElement.appendChild(temp);
+						temp.select();
+						document.execCommand("copy");
+						temp.remove();
+					}
+				}
 			}
 		});
 
@@ -571,6 +602,134 @@ var ChatDialog = {
 		this.dom.input.disabled = generating;
 	},
 
+	// ── Note saving ──────────────────────────────────────────────────
+
+	/**
+	 * Add a note icon button at the bottom-right of an assistant message bubble.
+	 * Clicking it saves the markdown text to an "Ollama notes" child note.
+	 */
+	_addNoteIcon(msgDiv, markdownText) {
+		let wrapper = document.createElementNS(
+			"http://www.w3.org/1999/xhtml",
+			"div"
+		);
+		wrapper.className = "note-icon-wrapper";
+
+		let btn = document.createElementNS(
+			"http://www.w3.org/1999/xhtml",
+			"button"
+		);
+		btn.className = "note-icon-btn";
+		btn.title = "Save to Zotero note";
+		// Use a simple note/document icon (Unicode)
+		btn.textContent = "\uD83D\uDCDD"; // memo/note emoji
+		btn.addEventListener("click", (event) => {
+			event.stopPropagation();
+			this._saveToNote(markdownText, btn);
+		});
+
+		wrapper.appendChild(btn);
+		msgDiv.appendChild(wrapper);
+	},
+
+	/**
+	 * Save text to the "Ollama notes" child note of the current item.
+	 * Creates the note if it doesn't exist, appends if it does.
+	 */
+	async _saveToNote(markdownText, btn) {
+		try {
+			// Access Zotero through the opener window
+			let Zotero;
+			try {
+				Zotero = window.opener && window.opener.Zotero;
+			} catch (e) {
+				// fallback
+			}
+			if (!Zotero) {
+				// Try Components approach for chrome-privileged windows
+				try {
+					let { default: Zotero_ } =
+						ChromeUtils.importESModule(
+							"chrome://zotero/content/zotero.mjs"
+						);
+					Zotero = Zotero_;
+				} catch (e) {
+					// ignore
+				}
+			}
+			if (!Zotero) {
+				alert("Could not access Zotero API to save note.");
+				return;
+			}
+
+			let parentItem = Zotero.Items.get(this.itemId);
+			if (!parentItem) {
+				alert("Could not find the parent item.");
+				return;
+			}
+
+			// Look for an existing "Ollama notes" child note
+			let noteIDs = parentItem.getNotes();
+			let existingNote = null;
+			for (let noteID of noteIDs) {
+				let noteItem = Zotero.Items.get(noteID);
+				if (noteItem) {
+					let noteTitle = noteItem.getNoteTitle();
+					if (noteTitle === "Ollama notes") {
+						existingNote = noteItem;
+						break;
+					}
+				}
+			}
+
+			// Format the text to add — use HTML since Zotero notes are HTML
+			let timestamp = new Date().toLocaleString();
+			let htmlContent =
+				"<hr/><p><strong>[" +
+				timestamp +
+				"]</strong></p>\n" +
+				this._markdownToNoteHtml(markdownText);
+
+			if (existingNote) {
+				// Append to existing note
+				let currentContent = existingNote.getNote();
+				existingNote.setNote(currentContent + "\n" + htmlContent);
+				await existingNote.saveTx();
+			} else {
+				// Create new child note
+				let newNote = new Zotero.Item("note");
+				newNote.parentID = parentItem.id;
+				newNote.setNote(
+					"<h1>Ollama notes</h1>\n" + htmlContent
+				);
+				await newNote.saveTx();
+			}
+
+			// Visual feedback — briefly change icon
+			let originalText = btn.textContent;
+			btn.textContent = "\u2705"; // check mark
+			btn.classList.add("saved");
+			setTimeout(() => {
+				btn.textContent = originalText;
+				btn.classList.remove("saved");
+			}, 2000);
+		} catch (error) {
+			alert("Error saving note: " + error.message);
+		}
+	},
+
+	/**
+	 * Convert markdown text to simple HTML suitable for Zotero notes.
+	 * Zotero notes use HTML, so we convert markdown to basic HTML.
+	 */
+	_markdownToNoteHtml(text) {
+		// Reuse the markdown renderer but produce cleaner output for notes
+		let html = this._renderMarkdown(text);
+		// The rendered markdown already escapes HTML entities and produces
+		// clean HTML — we just need to ensure it's suitable for Zotero notes
+		return html;
+	},
+
 	// ── Chat actions ──────────────────────────────────────────────────
 
 	async sendMessage() {
@@ -654,6 +813,7 @@ var ChatDialog = {
 		// Finalize with rendered markdown
 		if (fullResponse) {
 			assistantDiv.innerHTML = this._renderMarkdown(fullResponse);
+			this._addNoteIcon(assistantDiv, fullResponse);
 			this.messages.push({ role: "assistant", content: fullResponse });
 		} else if (!this.dom.statusBar.textContent) {
 			assistantDiv.textContent = "(No response generated)";
