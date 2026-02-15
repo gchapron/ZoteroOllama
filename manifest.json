@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "ZoteroOllama",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Chat with your PDFs using Ollama local LLMs",
   "author": "Guillaume Chapron",
   "icons": {},

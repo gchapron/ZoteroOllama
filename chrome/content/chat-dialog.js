@@ -21,6 +21,46 @@ var ChatDialog = {
 	// DOM references
 	dom: {},
 
+	// Quick prompts: short label shown in the bubble, full question pasted into input
+	quickPrompts: [
+		{
+			label: "Summarize",
+			question: "Provide a concise summary covering research question, methodology, key findings, and conclusions",
+		},
+		{
+			label: "Take-home",
+			question: "Provide the take-home messages as a bulleted list with explanations",
+		},
+		{
+			label: "Methods",
+			question: "Explain concisely the methodology: approach, data, analytical methods",
+		},
+		{
+			label: "Key findings",
+			question: "List concisely the key findings and results",
+		},
+		{
+			label: "Limitations",
+			question: "What are the study limitations (author-stated and identified)?",
+		},
+		{
+			label: "Future research",
+			question: "What are the suggested future research directions and open questions?",
+		},
+		{
+			label: "Critical review",
+			question: "Provide a strengths and weaknesses assessment of design, analysis, and conclusions",
+		},
+		{
+			label: "ELI5",
+			question: "Provide a plain-language explanation for non-specialists",
+		},
+		{
+			label: "GitHub",
+			question: "Is the paper associated with a GitHub repository?",
+		},
+	],
+
 	// Reference to OllamaClient from opener
 	_ollamaClient: null,
 
@@ -113,12 +153,45 @@ var ChatDialog = {
 		// Warnings from _analyzeAndAdjustContext are queued and shown after this
 		this._addWelcomeAndWarnings();
 
+		// Build quick prompt bubbles
+		this._buildQuickPrompts();
+
 		// Focus input
 		this.dom.input.focus();
 
 		// Resolve OllamaClient and check connection
 		this._resolveOllamaClient();
 		this.checkOllamaConnection();
+	},
+
+	/**
+	 * Build the quick prompt bubbles bar.
+	 * Each bubble shows a short label; clicking it pastes the full question
+	 * into the input area and focuses it, ready to send.
+	 */
+	_buildQuickPrompts() {
+		let container = document.getElementById("chat-quick-prompts");
+		if (!container) return;
+
+		for (let prompt of this.quickPrompts) {
+			let bubble = document.createElementNS(
+				"http://www.w3.org/1999/xhtml",
+				"button"
+			);
+			bubble.className = "quick-prompt-bubble";
+			bubble.textContent = prompt.label;
+			bubble.title = prompt.question;
+			bubble.addEventListener("click", () => {
+				this.dom.input.value = prompt.question;
+				this.dom.input.focus();
+				// Place cursor at end
+				this.dom.input.setSelectionRange(
+					prompt.question.length,
+					prompt.question.length
+				);
+			});
+			container.appendChild(bubble);
+		}
 	},
 
 	_resolveOllamaClient() {
