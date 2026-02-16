@@ -7,8 +7,9 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 ## Features
 
 - **Chat with any PDF** in your Zotero library using a local LLM
-- **Streaming responses** — answers appear token-by-token as the model generates them
-- **Rendered Markdown** — responses display formatted headings, bold, italic, code blocks, tables, lists, blockquotes, and links
+- **Streaming responses** — answers appear token-by-token with live Markdown formatting as the model generates them
+- **Rendered Markdown** — responses display formatted headings, bold, italic, code blocks, tables, lists, blockquotes, horizontal rules, and links
+- **Quick prompts** — clickable bubbles for common questions (Summarize, Take-home, Methods, Key findings, etc.) with keyboard shortcuts
 - **Multi-turn conversation** — ask follow-up questions with full context preserved
 - **Dynamic context window** — automatically expands Ollama's `num_ctx` to fit larger PDFs, with clear warnings when documents are very large
 - **Save to Zotero notes** — click the note icon on any answer to save it as a child note ("Ollama notes") under the reference item
@@ -17,11 +18,11 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 - **Paper metadata included** — title, authors, year, and DOI are sent alongside the text for richer answers
 - **Configurable** — choose your model, adjust the context window, customize the system prompt
 - **Privacy-first** — all processing happens locally via Ollama, nothing is sent to external servers
-- **Keyboard shortcuts** — Cmd/Ctrl+Shift+G to open, Cmd/Ctrl+W to close
+- **Keyboard shortcuts** — Cmd/Ctrl+Shift+G to open, Cmd/Ctrl+W to close, Cmd/Ctrl+letter for quick prompts
 
 ## Requirements
 
-- **Zotero 7** (version 7.0 or later)
+- **Zotero 7 or 8**
 - **[Ollama](https://ollama.com/)** installed and running locally (default: `http://localhost:11434`)
 - At least one model pulled in Ollama (e.g., `ollama pull llama3.2`)
 
@@ -62,7 +63,15 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 | **Cmd/Ctrl+Shift+G** | Open chat window for selected item |
 | **Enter** | Send message |
 | **Shift+Enter** | Insert newline without sending |
-| **Cmd/Ctrl+C** | Copy selected text from answers |
+| **Cmd/Ctrl+S** | Summarize |
+| **Cmd/Ctrl+T** | Take-home messages |
+| **Cmd/Ctrl+M** | Methods |
+| **Cmd/Ctrl+K** | Key findings |
+| **Cmd/Ctrl+L** | Limitations |
+| **Cmd/Ctrl+F** | Future research |
+| **Cmd/Ctrl+C** | Critical review (or copy if text is selected) |
+| **Cmd/Ctrl+E** | ELI5 (plain-language explanation) |
+| **Cmd/Ctrl+G** | GitHub repository |
 | **Cmd/Ctrl+W** | Close chat window |
 
 ### Saving answers to Zotero notes
@@ -76,15 +85,23 @@ Each assistant answer has a small note icon (📝) in the bottom-right corner. C
 
 This makes it easy to build up a collection of useful excerpts and analyses directly within your Zotero library.
 
-### Example questions
+### Quick prompts
 
-- "Summarize this paper in 3 bullet points"
-- "What methodology did the authors use?"
-- "What are the main findings and their implications?"
-- "Are there any limitations mentioned in the study?"
-- "Explain the statistical analysis used in section 3"
-- "Compare the results in Table 2 with the claims in the discussion"
-- "How does this paper relate to [topic]?"
+The chat window includes clickable prompt bubbles for common questions. Click a bubble to fill the input, or use **Cmd/Ctrl + first letter** to send immediately:
+
+| Bubble | Shortcut | Question |
+|--------|----------|----------|
+| Summarize | ⌘/Ctrl+S | Research question, methodology, key findings, and conclusions |
+| Take-home | ⌘/Ctrl+T | Take-home messages as a bulleted list |
+| Methods | ⌘/Ctrl+M | Methodology: approach, data, analytical methods |
+| Key findings | ⌘/Ctrl+K | Key findings and results |
+| Limitations | ⌘/Ctrl+L | Study limitations (author-stated and identified) |
+| Future research | ⌘/Ctrl+F | Future research directions and open questions |
+| Critical review | ⌘/Ctrl+C | Strengths and weaknesses assessment |
+| ELI5 | ⌘/Ctrl+E | Plain-language explanation for non-specialists |
+| GitHub | ⌘/Ctrl+G | Check for an associated GitHub repository |
+
+You can also type any custom question in the input area.
 
 ### Tips
 
@@ -115,7 +132,7 @@ Go to **Zotero > Settings** (macOS) or **Edit > Settings** (Windows/Linux), then
 | **Ollama URL** | `http://localhost:11434` | Address of your Ollama server. Change if Ollama runs on a different host or port |
 | **Model** | `gpt-oss:20b` | The Ollama model to use, selected from a dropdown of installed models. Must be already pulled (`ollama pull <model>`) |
 | **Context Window Size** | `32768` | Minimum token context window. Automatically expanded if the PDF requires more |
-| **System Prompt** | *(research assistant)* | Instructions sent to the model with every request. Customize to change the assistant's behavior |
+| **System Prompt** | *(research assistant)* | Instructions sent to the model with every request. Includes Markdown formatting guidance and HTML avoidance. Customize to change the assistant's behavior |
 | **Max PDF Text Length** | `100000` | Maximum characters of PDF text to extract from Zotero's index |
 
 ### Choosing a model
