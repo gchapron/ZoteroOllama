@@ -268,19 +268,20 @@ var ChatDialog = {
 						buffer = lines.pop();
 						for (const line of lines) {
 							if (!line.trim()) continue;
+							let chunk;
 							try {
-								const chunk = JSON.parse(line);
-								if (chunk.message && chunk.message.content) {
-									fullResponse += chunk.message.content;
-									if (onToken)
-										onToken(chunk.message.content);
-								}
-								if (chunk.done) {
-									if (onDone) onDone(fullResponse);
-									return fullResponse;
-								}
+								chunk = JSON.parse(line);
 							} catch (e) {
-								/* skip unparseable lines */
+								continue; // skip unparseable lines
+							}
+							if (chunk.message && chunk.message.content) {
+								fullResponse += chunk.message.content;
+								if (onToken)
+									onToken(chunk.message.content);
+							}
+							if (chunk.done) {
+								if (onDone) onDone(fullResponse);
+								return fullResponse;
 							}
 						}
 					}
@@ -475,7 +476,20 @@ var ChatDialog = {
 	 * and paragraphs.
 	 */
 	_renderMarkdown(text) {
-		// Escape HTML entities first
+		// Strip HTML tags the LLM may insert (e.g. <br>, <b>, <i>).
+		// Process line by line: on table rows (containing |), replace
+		// <br> with a space to preserve the row; elsewhere use newline.
+		text = text.split("\n").map(function (line) {
+			if (/\|/.test(line)) {
+				line = line.replace(/<br\s*\/?>/gi, " ");
+			} else {
+				line = line.replace(/<br\s*\/?>/gi, "\n");
+			}
+			line = line.replace(/<\/?[a-z][a-z0-9]*\b[^>]*>/gi, "");
+			return line;
+		}).join("\n");
+
+		// Escape HTML entities
 		let html = text
 			.replace(/&/g, "&amp;")
 			.replace(/</g, "&lt;")
@@ -540,7 +554,7 @@ var ChatDialog = {
 					result.push(listType === "ul" ? "</ul>" : "</ol>");
 					inList = false;
 				}
-				result.push("<hr>");
+				result.push("<hr/>");
 				continue;
 			}
 
@@ -985,9 +999,14 @@ var ChatDialog = {
 					if (thinkingSpan.parentNode) {
 						thinkingSpan.remove();
 					}
-					// Re-render the full markdown on each token
-					assistantDiv.innerHTML =
-						this._renderMarkdown(fullResponse);
+					// Render markdown live as tokens arrive
+					try {
+						assistantDiv.innerHTML = this._renderMarkdown(fullResponse);
+					} catch (e) {
+						// Fallback to plain text if XHTML parse fails
+						assistantDiv.style.whiteSpace = "pre-wrap";
+						assistantDiv.textContent = fullResponse;
+					}
 					this._scrollToBottom();
 				},
 				onDone: (text) => {
@@ -1001,16 +1020,25 @@ var ChatDialog = {
 			if (error.name !== "AbortError") {
 				this.showStatus("Error: " + error.message, "error");
 			}
+		} finally {
+			// Always reset state, even if an error occurred mid-stream
+			if (thinkingSpan.parentNode) {
+				thinkingSpan.remove();
+			}
+			this._setGenerating(false);
+			this.currentAbortController = null;
 		}
 
-		// Remove thinking indicator if still present
-		if (thinkingSpan.parentNode) {
-			thinkingSpan.remove();
-		}
-
-		// Finalize with rendered markdown
+		// Finalize: ensure final render is clean markdown
 		if (fullResponse) {
-			assistantDiv.innerHTML = this._renderMarkdown(fullResponse);
+			assistantDiv.style.whiteSpace = "";
+			try {
+				assistantDiv.innerHTML = this._renderMarkdown(fullResponse);
+			} catch (renderErr) {
+				try { Zotero.debug("ZoteroOllama: markdown render error: " + renderErr); } catch (e) { /* ignore */ }
+				assistantDiv.style.whiteSpace = "pre-wrap";
+				assistantDiv.textContent = fullResponse;
+			}
 			this._addNoteIcon(assistantDiv, fullResponse);
 			this.messages.push({ role: "assistant", content: fullResponse });
 		} else if (!this.dom.statusBar.textContent) {
@@ -1020,9 +1048,6 @@ var ChatDialog = {
 			assistantDiv.remove();
 		}
 
-		// Reset state
-		this._setGenerating(false);
-		this.currentAbortController = null;
 		this.dom.input.focus();
 	},
 
