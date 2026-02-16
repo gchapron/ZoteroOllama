@@ -213,7 +213,8 @@ var ChatDialog = {
 				"button"
 			);
 			bubble.className = "quick-prompt-bubble";
-			bubble.textContent = prompt.label;
+			bubble.innerHTML = "<strong>" + prompt.label.charAt(0) + "</strong>" +
+				prompt.label.substring(1);
 			bubble.title = prompt.question +
 				" (" + modLabel + prompt.key.toUpperCase() + ")";
 			bubble.addEventListener("click", () => {
@@ -963,14 +964,10 @@ var ChatDialog = {
 				await newNote.saveTx();
 			}
 
-			// Visual feedback — briefly change icon
-			let originalText = btn.textContent;
+			// Visual feedback — permanent checkmark
 			btn.textContent = "\u2705"; // check mark
 			btn.classList.add("saved");
-			setTimeout(() => {
-				btn.textContent = originalText;
-				btn.classList.remove("saved");
-			}, 2000);
+			btn.title = "Saved to Zotero note";
 		} catch (error) {
 			alert("Error saving note: " + error.message);
 		}

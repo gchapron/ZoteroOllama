@@ -81,7 +81,7 @@ Each assistant answer has a small note icon (📝) in the bottom-right corner. C
 - The note is created as a child of the reference item (alongside the PDF), titled **"Ollama notes"**
 - If the note already exists, new answers are appended with a timestamp separator
 - If it doesn't exist, a new note is created automatically
-- A brief checkmark (✅) confirms the save
+- A permanent checkmark (✅) replaces the icon so you can see which answers have been saved
 
 This makes it easy to build up a collection of useful excerpts and analyses directly within your Zotero library.
 
