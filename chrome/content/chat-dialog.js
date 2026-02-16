@@ -25,38 +25,47 @@ var ChatDialog = {
 	quickPrompts: [
 		{
 			label: "Summarize",
+			key: "s",
 			question: "Provide a concise summary covering research question, methodology, key findings, and conclusions",
 		},
 		{
 			label: "Take-home",
+			key: "t",
 			question: "Provide the take-home messages as a bulleted list with explanations",
 		},
 		{
 			label: "Methods",
+			key: "m",
 			question: "Explain concisely the methodology: approach, data, analytical methods",
 		},
 		{
 			label: "Key findings",
+			key: "k",
 			question: "List concisely the key findings and results",
 		},
 		{
 			label: "Limitations",
+			key: "l",
 			question: "What are the study limitations (author-stated and identified)?",
 		},
 		{
 			label: "Future research",
+			key: "f",
 			question: "What are the suggested future research directions and open questions?",
 		},
 		{
 			label: "Critical review",
+			key: "c",
 			question: "Provide a strengths and weaknesses assessment of design, analysis, and conclusions",
 		},
 		{
 			label: "ELI5",
+			key: "e",
 			question: "Provide a plain-language explanation for non-specialists",
 		},
 		{
 			label: "GitHub",
+			key: "g",
 			question: "Is the paper associated with a GitHub repository?",
 		},
 	],
@@ -145,6 +154,28 @@ var ChatDialog = {
 			}
 		});
 
+		// Quick prompt keyboard shortcuts: Cmd/Ctrl+<key> sends the prompt
+		document.addEventListener("keydown", (event) => {
+			let modKey = event.metaKey || event.ctrlKey;
+			if (!modKey || this.isGenerating) return;
+
+			// Don't override Cmd+C when text is selected (copy)
+			let key = event.key.toLowerCase();
+			if (key === "c") {
+				let sel = window.getSelection();
+				if (sel && sel.toString().length > 0) return;
+			}
+
+			for (let prompt of this.quickPrompts) {
+				if (prompt.key === key) {
+					event.preventDefault();
+					this.dom.input.value = prompt.question;
+					this.sendMessage();
+					return;
+				}
+			}
+		});
+
 		// Analyze context window vs PDF size, adjust/truncate if needed
 		// (this may truncate this.pdfText and updates the header)
 		this._analyzeAndAdjustContext();
@@ -173,6 +204,9 @@ var ChatDialog = {
 		let container = document.getElementById("chat-quick-prompts");
 		if (!container) return;
 
+		let isMac = navigator.platform.indexOf("Mac") !== -1;
+		let modLabel = isMac ? "\u2318" : "Ctrl+";
+
 		for (let prompt of this.quickPrompts) {
 			let bubble = document.createElementNS(
 				"http://www.w3.org/1999/xhtml",
@@ -180,7 +214,8 @@ var ChatDialog = {
 			);
 			bubble.className = "quick-prompt-bubble";
 			bubble.textContent = prompt.label;
-			bubble.title = prompt.question;
+			bubble.title = prompt.question +
+				" (" + modLabel + prompt.key.toUpperCase() + ")";
 			bubble.addEventListener("click", () => {
 				this.dom.input.value = prompt.question;
 				this.dom.input.focus();
@@ -192,6 +227,17 @@ var ChatDialog = {
 			});
 			container.appendChild(bubble);
 		}
+
+		// Hint text showing keyboard shortcut convention
+		let hint = document.createElementNS(
+			"http://www.w3.org/1999/xhtml",
+			"span"
+		);
+		hint.className = "quick-prompt-hint";
+		hint.textContent = isMac
+			? "\u2318 + first letter to send"
+			: "Ctrl + first letter to send";
+		container.appendChild(hint);
 	},
 
 	_resolveOllamaClient() {

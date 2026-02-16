@@ -378,6 +378,16 @@
   background: #d0e2fd;
 }
 
+.quick-prompt-hint {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
 /* === Scrollbar styling === */
 #chat-messages::-webkit-scrollbar {
   width: 6px;
