@@ -2,7 +2,7 @@
 
 **Chat with your PDFs using local LLMs powered by [Ollama](https://ollama.com/).**
 
-ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you have a conversation with the PDF documents in your library. Select a reference, open the chat window, and ask questions about the paper — summaries, key findings, methodology details, or anything else. Everything runs locally on your machine through Ollama, so your data never leaves your computer.
+ZoteroOllama is a plugin for [Zotero](https://www.zotero.org/) (version 7 and later) that lets you have a conversation with the PDF documents in your library. Select a reference, open the chat window, and ask questions about the paper — summaries, key findings, methodology details, or anything else. Everything runs locally on your machine through Ollama, so your data never leaves your computer.
 
 ![ZoteroOllama screenshot](docs/screenshot.png)
 
@@ -24,7 +24,7 @@ ZoteroOllama is a plugin for [Zotero 7](https://www.zotero.org/) that lets you h
 
 ## Requirements
 
-- **Zotero 7 or 8**
+- **Zotero 7 or later** (tested on 7, 8, and 9)
 - **[Ollama](https://ollama.com/)** installed and running locally (default: `http://localhost:11434`)
 - At least one model pulled in Ollama (e.g., `ollama pull llama3.2`)
 
